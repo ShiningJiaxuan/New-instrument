@@ -1,1 +1,31 @@
-<h1>Hello World Wide Web</h1>
+<body></body>
+<script src="https://unpkg.com/tone"></script>
+<script src="https://cdn.jsdelivr.net/gh/netizenorg/netnet-standard-library/build/nn.min.js?v=1"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script>
+/* global nn, Tone */
+
+const fatOsc = new Tone.FatOscillator({
+  frequency: 440,
+  type: 'sawtooth',
+  count: 3,
+  spread: 20
+}).toDestination();
+
+
+const filter = new Tone.Filter(800, "lowpass").toDestination(); 
+const distortion = new Tone.Distortion(0.4).toDestination(); // Adds a gritty edge
+const delay = new Tone.FeedbackDelay("8n", 0.5).toDestination(); // Echo effect
+const reverb = new Tone.Reverb({ decay: 3, wet: 0.5 }).toDestination(); // Space effect
+
+fatOsc.chain(filter, distortion, delay, reverb);
+
+
+nn.create('button')
+  .content('start')
+  .addTo('body')
+  .on('click', () => fatOsc.start());
+nn.create('button')
+  .content('stop')
+  .addTo('body')
+  .on('click', () => fatOsc.stop());
