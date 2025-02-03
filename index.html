@@ -1,31 +1,177 @@
-<body></body>
+ <body></body>
 <script src="https://unpkg.com/tone"></script>
 <script src="https://cdn.jsdelivr.net/gh/netizenorg/netnet-standard-library/build/nn.min.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://algorithmicmusic.online/js/create-spectrum.js"></script>
+<script src="https://algorithmicmusic.online/js/create-waveform.js"></script>
 <script>
-/* global nn, Tone */
+/* global Tone, nn, d3, createWaveform, createSpectrum */
+/* global Tone, nn, createWaveform, createSpectrum */
 
-const fatOsc = new Tone.FatOscillator({
-  frequency: 440,
-  type: 'sawtooth',
-  count: 3,
-  spread: 20
+/* global Tone, nn, createWaveform, createSpectrum */
+
+let detuneCount = 3;
+let detuneSpread = 20;
+
+const fatOsc = new Tone.PolySynth(Tone.Synth, {
+  oscillator: {
+    type: "fatsawtooth",
+    count: detuneCount,
+    spread: detuneSpread
+  }
 }).toDestination();
 
+function updateCount(e) {
+  detuneCount = Number(e.target.value);
+  countLabel.content(detuneCount);
 
-const filter = new Tone.Filter(800, "lowpass").toDestination(); 
-const distortion = new Tone.Distortion(0.4).toDestination(); // Adds a gritty edge
-const delay = new Tone.FeedbackDelay("8n", 0.5).toDestination(); // Echo effect
-const reverb = new Tone.Reverb({ decay: 3, wet: 0.5 }).toDestination(); // Space effect
+  fatOsc.set({
+    oscillator: { count: detuneCount }
+  });
+}
 
-fatOsc.chain(filter, distortion, delay, reverb);
+function updateSpread(e) {
+  detuneSpread = Number(e.target.value);
+  spreadLabel.content(detuneSpread);
 
+  fatOsc.set({
+    oscillator: { spread: detuneSpread }
+  });
+}
 
-nn.create('button')
-  .content('start')
-  .addTo('body')
-  .on('click', () => fatOsc.start());
-nn.create('button')
-  .content('stop')
-  .addTo('body')
-  .on('click', () => fatOsc.stop());
+nn.create("input")
+  .set({ type: "range", value: detuneCount, min: 1, max: 10 })
+  .css({ width: "400px" })
+  .addTo("body")
+  .on("input", updateCount);
+
+const countLabel = nn.create("label")
+  .content(detuneCount)
+  .addTo("body");
+
+nn.create("input")
+  .set({ type: "range", value: detuneSpread, min: 0, max: 100, step: 0.1 })
+  .css({ width: "400px" })
+  .addTo("body")
+  .on("input", updateSpread);
+
+const spreadLabel = nn.create("label")
+  .content(detuneSpread)
+  .addTo("body");
+
+const waveAM = createWaveform();
+const specAM = createSpectrum({ range: [20, 7040] });
+
+fatOsc.connect(waveAM);
+fatOsc.connect(specAM);
+
+const wave = createWaveform();
+fatOsc.connect(wave);
+
+const keyMap = {
+  q: { freq: 261.63, pressed: false }, // C4
+  2: { freq: 277.18, pressed: false }, // C#4/Db4
+  w: { freq: 293.66, pressed: false }, // D4
+  3: { freq: 311.13, pressed: false }, // D#4/Eb4
+  e: { freq: 329.63, pressed: false }, // E4
+  r: { freq: 349.23, pressed: false }, // F4
+  5: { freq: 369.99, pressed: false }, // F#4/Gb4
+  t: { freq: 392.00, pressed: false }, // G4
+  6: { freq: 415.30, pressed: false }, // G#4/Ab4
+  y: { freq: 440.00, pressed: false }, // A4
+  7: { freq: 466.16, pressed: false }, // A#4/Bb4
+  u: { freq: 493.88, pressed: false }, // B4
+
+  i: { freq: 523.25, pressed: false }, // C5
+  9: { freq: 554.37, pressed: false }, // C#5/Db5
+  o: { freq: 587.33, pressed: false }, // D5
+  0: { freq: 622.25, pressed: false }, // D#5/Eb5
+  p: { freq: 659.26, pressed: false }, // E5
+  '[': { freq: 698.46, pressed: false }, // F5
+  '=': { freq: 739.99, pressed: false }, // F#5/Gb5
+  ']': { freq: 783.99, pressed: false }, // G5
+  '\\': { freq: 830.61, pressed: false }, // G#5/Ab5
+
+  z: { freq: 880.00, pressed: false }, // A5
+  x: { freq: 932.33, pressed: false }, // A#5/Bb5
+  c: { freq: 987.77, pressed: false }, // B5
+  v: { freq: 1046.50, pressed: false } // C6
+};
+
+function attack(e) {
+  const obj = keyMap[e.key];
+  if (obj && !obj.pressed) {
+    fatOsc.triggerAttack(Tone.Frequency(obj.freq));
+    obj.pressed = true;
+  }
+}
+
+function release(e) {
+  const obj = keyMap[e.key];
+  if (obj && obj.pressed) {
+    fatOsc.triggerRelease(Tone.Frequency(obj.freq));
+    obj.pressed = false;
+  }
+}
+
+nn.on("keydown", attack);
+nn.on("keyup", release);
+
+  
+// 🎛 Create Initial Reverb Effect
+let reverb = new Tone.Reverb({
+  decay: 3,
+  wet: 0.5
+}).toDestination();
+
+// 🔗 Connect Synth → Reverb → Speakers
+fatOsc.connect(reverb);
+
+// 🎚 Create Slider for Reverb Wet/Dry Mix
+function updateReverbMix(e) {
+  const wetValue = Number(e.target.value);
+  reverb.wet.value = wetValue;
+  reverbLabel.content(`Reverb Mix: ${wetValue}`);
+}
+
+nn.create("input")
+  .set({ type: "range", value: 0.5, min: 0, max: 1, step: 0.01 })
+  .css({ width: "400px" })
+  .addTo("body")
+  .on("input", updateReverbMix);
+
+const reverbLabel = nn.create("label")
+  .content("Reverb Mix: 0.5")
+  .addTo("body");
+
+// 🎚 Create Slider for Reverb Decay Control
+function updateReverbDecay(e) {
+  const decayValue = Number(e.target.value);
+
+  // Dispose of the old reverb to free up memory
+  reverb.disconnect();
+  reverb.dispose();
+
+  // Create a new reverb with updated decay time
+  reverb = new Tone.Reverb({
+    decay: decayValue,
+    wet: reverb.wet.value // Preserve the wet mix
+  }).toDestination();
+
+  // Reconnect the synth to the new reverb
+  fatOsc.connect(reverb);
+
+  reverbDecayLabel.content(`Reverb Decay: ${decayValue}`);
+}
+
+nn.create("input")
+  .set({ type: "range", value: 3, min: 0.1, max: 100, step: 0.1 })
+  .css({ width: "400px" })
+  .addTo("body")
+  .on("input", updateReverbDecay);
+
+const reverbDecayLabel = nn.create("label")
+  .content("Reverb Decay: 3")
+  .addTo("body");
+
+</script>
