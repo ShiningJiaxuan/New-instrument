@@ -6,9 +6,7 @@
 <script src="https://algorithmicmusic.online/js/create-waveform.js"></script>
 <script>
 /* global Tone, nn, d3, createWaveform, createSpectrum */
-/* global Tone, nn, createWaveform, createSpectrum */
 
-/* global Tone, nn, createWaveform, createSpectrum */
 
 let detuneCount = 3;
 let detuneSpread = 20;
@@ -118,16 +116,15 @@ nn.on("keydown", attack);
 nn.on("keyup", release);
 
   
-// 🎛 Create Initial Reverb Effect
+
 let reverb = new Tone.Reverb({
   decay: 3,
   wet: 0.5
 }).toDestination();
 
-// 🔗 Connect Synth → Reverb → Speakers
+
 fatOsc.connect(reverb);
 
-// 🎚 Create Slider for Reverb Wet/Dry Mix
 function updateReverbMix(e) {
   const wetValue = Number(e.target.value);
   reverb.wet.value = wetValue;
@@ -144,21 +141,18 @@ const reverbLabel = nn.create("label")
   .content("Reverb Mix: 0.5")
   .addTo("body");
 
-// 🎚 Create Slider for Reverb Decay Control
 function updateReverbDecay(e) {
   const decayValue = Number(e.target.value);
 
-  // Dispose of the old reverb to free up memory
   reverb.disconnect();
   reverb.dispose();
 
-  // Create a new reverb with updated decay time
+ 
   reverb = new Tone.Reverb({
     decay: decayValue,
-    wet: reverb.wet.value // Preserve the wet mix
+    wet: reverb.wet.value 
   }).toDestination();
 
-  // Reconnect the synth to the new reverb
   fatOsc.connect(reverb);
 
   reverbDecayLabel.content(`Reverb Decay: ${decayValue}`);
