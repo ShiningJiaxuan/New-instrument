@@ -165,7 +165,7 @@ function updateReverbDecay(e) {
 }
 
 nn.create("input")
-  .set({ type: "range", value: 3, min: 0.1, max: 100, step: 0.1 })
+  .set({ type: "range", value: 3, min: 0.1, max: 20, step: 0.1 })
   .css({ width: "400px" })
   .addTo("body")
   .on("input", updateReverbDecay);
@@ -173,5 +173,8 @@ nn.create("input")
 const reverbDecayLabel = nn.create("label")
   .content("Reverb Decay: 3")
   .addTo("body");
+
+
+
 
 </script>
