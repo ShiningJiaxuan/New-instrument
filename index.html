@@ -63,8 +63,6 @@ const specAM = createSpectrum({ range: [20, 7040] });
 fatOsc.connect(waveAM);
 fatOsc.connect(specAM);
 
-const wave = createWaveform();
-fatOsc.connect(wave);
 
 const keyMap = {
   q: { freq: 261.63, pressed: false }, // C4
@@ -101,6 +99,8 @@ function attack(e) {
   if (obj && !obj.pressed) {
     fatOsc.triggerAttack(Tone.Frequency(obj.freq));
     obj.pressed = true;
+    // Reset spread to 100 and record the current time to start the ramp.
+    fatOsc.set({ oscillator: { spread: 100 } });
   }
 }
 
