@@ -116,59 +116,49 @@ nn.on("keydown", attack);
 nn.on("keyup", release);
 
   
-
 let reverb = new Tone.Reverb({
   decay: 3,
   wet: 0.5
 }).toDestination();
 
-
 fatOsc.connect(reverb);
 
-function updateReverbMix(e) {
-  const wetValue = Number(e.target.value);
+function updateReverbWithMouse(event) {
+  const x = event.clientX / window.innerWidth;
+  const y = event.clientY / window.innerHeight;
+
+  const decayValue = 0.1 + x * 10;
+  const wetValue = 1 - y;
+
   reverb.wet.value = wetValue;
-  reverbLabel.content(`Reverb Mix: ${wetValue}`);
+
+  if (!window.reverbDecayUpdating) {
+    window.reverbDecayUpdating = true;
+
+    setTimeout(() => {
+      let newReverb = new Tone.Reverb({ decay: decayValue, wet: wetValue }).toDestination();
+      fatOsc.disconnect(reverb);
+      reverb.dispose();
+      reverb = newReverb;
+      fatOsc.connect(reverb);
+
+      window.reverbDecayUpdating = false;
+    }, 300);
+  }
+
+  reverbLabel.content(`Reverb Mix: ${wetValue.toFixed(2)}`);
+  reverbDecayLabel.content(`Reverb Decay: ${decayValue.toFixed(2)}s`);
 }
 
-nn.create("input")
-  .set({ type: "range", value: 0.5, min: 0, max: 1, step: 0.01 })
-  .css({ width: "400px" })
-  .addTo("body")
-  .on("input", updateReverbMix);
+document.addEventListener("mousemove", updateReverbWithMouse);
 
 const reverbLabel = nn.create("label")
   .content("Reverb Mix: 0.5")
   .addTo("body");
 
-function updateReverbDecay(e) {
-  const decayValue = Number(e.target.value);
-
-  reverb.disconnect();
-  reverb.dispose();
-
- 
-  reverb = new Tone.Reverb({
-    decay: decayValue,
-    wet: reverb.wet.value 
-  }).toDestination();
-
-  fatOsc.connect(reverb);
-
-  reverbDecayLabel.content(`Reverb Decay: ${decayValue}`);
-}
-
-nn.create("input")
-  .set({ type: "range", value: 3, min: 0.1, max: 20, step: 0.1 })
-  .css({ width: "400px" })
-  .addTo("body")
-  .on("input", updateReverbDecay);
-
 const reverbDecayLabel = nn.create("label")
-  .content("Reverb Decay: 3")
+  .content("Reverb Decay: 3s")
   .addTo("body");
-
-
 
 
 </script>
